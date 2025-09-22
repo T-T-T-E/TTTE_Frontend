@@ -1,0 +1,90 @@
+﻿@page "/"
+@layout EmptyLayout
+
+@using TTTE.Components.Layout
+@using TTTE.Services
+@using TTTE.DTOs
+
+@inject NavigationManager navigationManager
+@inject AutheService authService
+
+
+@code {
+
+    private UserSession userSession = new UserSession();
+    private string errorMessage;
+
+    private async Task LoginForm()
+    {
+        try
+        {
+            var token = await authService.Login(userSession);
+
+            // Si el token es nulo o vacío, las credenciales son incorrectas.
+            if (string.IsNullOrEmpty(token))
+            {
+                errorMessage = "Credenciales incorrectas";
+                return;
+            }
+
+            // Si el token tiene un valor, el login fue exitoso.
+            await authService.SetToken(token);
+            navigationManager.NavigateTo("/Weather");
+
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ocurrió un error: {ex.Message}";
+        }
+    }
+
+}
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="css/login.css">
+
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="login-form-section">
+            <h2 class="text-center mb-4">Bienvenido</h2>
+            <EditForm Model="userSession" OnValidSubmit="LoginForm">
+                <div class="mb-3">
+                    <label for="userInput" class="form-label">Email</label>
+                    <InputText type="email" class="form-control" @bind-Value="userSession.email" requerid />
+                </div>
+                <div class="mb-3">
+                    <label for="passwordInput" class="form-label">Contraseña</label>
+                    <InputText type="password" class="form-control" @bind-Value="userSession.Password" placeholder="Ingresa su contraseña" required />
+                </div>
+
+                <div class="d-grid gap-2 mb-3">
+                    <button type="submit" class="buttonstyleLogin">Entrar</button>
+                    <a href="/CreateCliente" class="buttonstyleCreate">Crear cuenta para clientes</a>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+
+                <div class="alert alert-danger" role="alert">@errorMessage</div>
+
+            }
+
+        </div>
+        <div class="login-image-section">
+            <img src="/img/Logo.png">
+        </div> 
+    </div>
+
+
+</body>
+
+
