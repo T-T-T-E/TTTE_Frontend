@@ -133,7 +133,6 @@ a {
 }
 
 .buttonstyleLogin {
-    background-color: #8db986;
     color: #333;
     border: none;
     padding: 10px 20px;
@@ -146,7 +145,6 @@ a {
 }
 
     .buttonstyleLogin:hover {
-        background-color: #333;
         color: #efeae4;
         transform: scale(1.05);
     }

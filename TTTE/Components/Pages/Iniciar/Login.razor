@@ -51,11 +51,11 @@
 
     <style>
 
-        .login-card{
+        .login-card {
             background-color: white;
         }
 
-        .login-form-section{
+        .login-form-section {
             background-color: white;
         }
 
@@ -63,10 +63,15 @@
             background-color: #000000;
         }
 
-        .buttonstyleLogin{
-            background-color: 
+        .buttonstyleLogin {
+            background-color: #000000;
+            color: white;
         }
 
+            .buttonstyleLogin:hover {
+                background-color: #c5ab7a;
+                color: #000000;
+            }
 
     </style>
 
@@ -79,7 +84,7 @@
             <EditForm Model="userSession" OnValidSubmit="LoginForm">
                 <div class="mb-3">
                     <label for="userInput" class="form-label">Email</label>
-                    <InputText type="email" class="form-control" @bind-Value="userSession.email" requerid />
+                    <InputText type="email" class="form-control" @bind-Value="userSession.email" placeholder="Ingresa su correo" requerid />
                 </div>
                 <div class="mb-3">
                     <label for="passwordInput" class="form-label">Contraseña</label>
