@@ -15,7 +15,6 @@
     /* Bordes más redondeados */
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     /* Sombra más pronunciada */
-    background-color: #ffffff;
     display: flex;
     /* Para la disposición de las columnas */
     overflow: hidden;

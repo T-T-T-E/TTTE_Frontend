@@ -2,11 +2,42 @@
 @layout EmptyLayout
 
 @using TTTE.Components.Layout
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using TTTE.DTOs
 
 @code {
+   
+    private ClienteCreateDTO createCliente = new ClienteCreateDTO();
+    private string? mensaje;
+    private bool loading;
+    private bool error;
 
+    private async Task HandleSubmit()
+    {
+        loading = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/register", createCliente);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                error = true;
+                mensaje = "Error al registrar el cliente o cliente creado recientemente";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = true;
+            mensaje = $"Error: {ex.Message}";
+        }
+        loading = false;
+    }
 }
-
 
 <head>
     <meta charset="UTF-8">
@@ -18,39 +49,52 @@
 
 </head>
 
-<body>
-    <div class="login-card">
-        <div class="login-image-section">
-            <img src="/img/Logo.png">
-        </div>
-        <div class="login-form-section">
-            <h2 class="text-center my-4">Crear Nuevo Cliente</h2>
-            <form>
-                <div class="mb-3">
-                    <label for="userInput" class="form-label">Nombre</label>
-                    <input id="userInput" class="form-control" />
-                </div>
-                <div class="mb-3">
-                    <label for="emailInput" class="form-label">Email</label>
-                    <input id="emailInput" type="email" class="form-control"  />
-                </div>
-                <div class="mb-3">
-                    <label for="passwordInput" class="form-label">Telefono</label>
-                    <input id="passwordInput" type="number" class="form-control"  />
-                </div>
-                <div class="mb-3">
-                    <label for="passwordInput" class="form-label">Contraseña</label>
-                    <input id="passwordInput" type="password" class="form-control" />
-                </div>
-                <div class="d-grid gap-2 mb-3">
-                    <button type="submit" class="buttonCreateCliente">Entrar</button>
-                </div>
-               
-            </form>
-           
-        </div>
+<div class="login-card">
+    <div class="login-image-section">
+        <img src="/img/logo1.jpeg">
     </div>
-</body>
+    <div class="login-form-section">
+        <h2 class="text-center my-4">Crear Nuevo Cliente</h2>
+
+        <EditForm Model="createCliente" OnValidSubmit="HandleSubmit">
+            <div class="mb-3">
+                <label for="nombreInput" class="form-label">Nombre</label>
+                <InputText id="nombreInput" class="form-control" @bind-Value="createCliente.nombreCompleto" />
+            </div>
+            <div class="mb-3">
+                <label for="emailInput" class="form-label">Email</label>
+                <InputText id="nombreInput" class="form-control" @bind-Value="createCliente.email" />
+            </div>
+            <div class="mb-3">
+                <label for="telefonoInput" class="form-label">Teléfono</label>
+                <InputText id="telefonoInput" type="tel" class="form-control" @bind-Value="createCliente.telefono" />
+            </div>
+            <div class="mb-3">
+                <label for="passwordInput" class="form-label">Contraseña</label>
+                <InputText id="passwordInput" type="password" class="form-control" @bind-Value="createCliente.password" />
+            </div>
+            <div class="d-grid gap-2 mb-3">
+                <button type="submit" class="buttonCreateCliente" disabled="@loading">
+                    @if (loading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-2">Procesando...</span>
+                    }
+                    else
+                    {
+                        <span>Crear Cliente</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+        @if (mensaje != null)
+        {
+            <div class="alert @(error ? "alert-danger" : "alert-success")" role="alert">
+                @mensaje
+            </div>
+        }
+    </div>
+</div>
 
 
 
