@@ -13,7 +13,7 @@ builder.Services.AddScoped(o => new HttpClient
 });
 
 builder.Services.AddScoped<AutheService>();
-
+builder.Services.AddScoped<CitaService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
