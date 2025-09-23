@@ -1,0 +1,283 @@
+﻿@page "/citas"
+@using TTTE.DTOs
+@using TTTE.Services
+@inject CitaService CitaService
+@inject AutheService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Gestión de Citas</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Gestión de Citas</h1>
+                <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                    <i class="bi bi-plus-circle"></i> Nueva Cita
+                </button>
+            </div>
+
+            @if (mostrarMensaje)
+            {
+                <div class="alert @(tipoMensaje == "success" ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @mensaje
+                    <button type="button" class="btn-close" @onclick="OcultarMensaje"></button>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lista de Citas</h5>
+                </div>
+                <div class="card-body">
+                    @if (citas == null)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (citas.Count == 0)
+                    {
+                        <div class="text-center text-muted">
+                            <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
+                            <p class="mt-2">No hay citas registradas</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>Servicio</th>
+                                        <th>Barbero</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cita in citas)
+                                    {
+                                        <tr>
+                                            <td>@cita.Id</td>
+                                            <td>@cita.NombreCliente</td>
+                                            <td>@cita.IdServicio</td>
+                                            <td>@cita.IdBarbero</td>
+                                            <td>@cita.Fecha.ToString("dd/MM/yyyy")</td>
+                                            <td>@cita.Hora.ToString(@"hh\:mm")</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning me-1" @onclick="@(() => AbrirModalEditar(cita))">
+                                                    <i class="bi bi-pencil">Editar Cita</i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="@(() => EliminarCitaConfirmar(cita.Id))">
+                                                    <i class="bi bi-trash">Elimnar Cita</i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Cita -->
+<div class="modal fade @(mostrarModal ? "show" : "")" style="display: @(mostrarModal ? "block" : "none")" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(esEdicion ? "Editar Cita" : "Nueva Cita")</h5>
+                <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+            </div>
+            <EditForm Model="citaFormulario" OnValidSubmit="GuardarCita">
+                <DataAnnotationsValidator />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Cliente</label>
+                        <InputText class="form-control" @bind-Value="citaFormulario.NombreCliente" />
+                        <ValidationMessage For="@(() => citaFormulario.NombreCliente)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ID Servicio</label>
+                        <InputNumber class="form-control" @bind-Value="citaFormulario.IdServicio" />
+                        <ValidationMessage For="@(() => citaFormulario.IdServicio)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ID Barbero</label>
+                        <InputNumber class="form-control" @bind-Value="citaFormulario.IdBarbero" />
+                        <ValidationMessage For="@(() => citaFormulario.IdBarbero)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <InputDate class="form-control" @bind-Value="fechaSeleccionada" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hora requerido cambiar*</label>
+                        <InputText type="time" class="form-control" @bind-Value="citaFormulario.Hora" />
+                        <ValidationMessage For="@(() => citaFormulario.Hora)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" disabled="@guardando">
+                        @if (guardando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        @(esEdicion ? "Actualizar" : "Crear")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@if (mostrarModal)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<CitaDto>? citas;
+    private CrearCitaDto citaFormulario = new();
+    private bool mostrarModal = false;
+    private bool esEdicion = false;
+    private int citaEditandoId = 0;
+    private bool guardando = false;
+    private DateTime fechaSeleccionada = DateTime.Today;
+
+    private bool mostrarMensaje = false;
+    private string mensaje = "";
+    private string tipoMensaje = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarAutenticacion();
+        await CargarCitas();
+    }
+
+    private async Task VerificarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
+        if (string.IsNullOrEmpty(token))
+        {
+            // Redirigir al login si no hay token
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task CargarCitas()
+    {
+        citas = await CitaService.ObtenerCitasAsync();
+        StateHasChanged();
+    }
+
+    private void AbrirModalCrear()
+    {
+        citaFormulario = new CrearCitaDto();
+        fechaSeleccionada = DateTime.Today;
+        esEdicion = false;
+        mostrarModal = true;
+    }
+
+    private void AbrirModalEditar(CitaDto cita)
+    {
+        citaFormulario = new CrearCitaDto
+            {
+                NombreCliente = cita.NombreCliente,
+                IdServicio = cita.IdServicio,
+                IdBarbero = cita.IdBarbero,
+                Fecha = cita.Fecha.ToString("yyyy-MM-dd"),
+                Hora = cita.Hora.ToString(@"hh\:mm")
+            };
+        fechaSeleccionada = cita.Fecha;
+        citaEditandoId = cita.Id;
+        esEdicion = true;
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+        citaFormulario = new CrearCitaDto();
+        esEdicion = false;
+        citaEditandoId = 0;
+    }
+
+    private async Task GuardarCita()
+    {
+        guardando = true;
+        citaFormulario.Fecha = fechaSeleccionada.ToString("yyyy-MM-dd");
+
+        bool resultado;
+        if (esEdicion)
+        {
+            resultado = await CitaService.ActualizarCitaAsync(citaEditandoId, citaFormulario);
+        }
+        else
+        {
+            resultado = await CitaService.CrearCitaAsync(citaFormulario);
+        }
+
+        if (resultado)
+        {
+            MostrarMensaje($"Cita {(esEdicion ? "actualizada" : "creada")} exitosamente", "success");
+            CerrarModal();
+            await CargarCitas();
+        }
+        else
+        {
+            MostrarMensaje($"Error al {(esEdicion ? "actualizar" : "crear")} la cita", "error");
+        }
+
+        guardando = false;
+    }
+
+    private async Task EliminarCitaConfirmar(int id)
+    {
+        bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de que desea eliminar esta cita?");
+
+        if (confirmado)
+        {
+            await EliminarCita(id);
+        }
+    }
+
+    private async Task EliminarCita(int id)
+    {
+        var resultado = await CitaService.EliminarCitaAsync(id);
+
+        if (resultado)
+        {
+            MostrarMensaje("Cita eliminada exitosamente", "success");
+            await CargarCitas();
+        }
+        else
+        {
+            MostrarMensaje("Error al eliminar la cita", "error");
+        }
+    }
+
+    private void MostrarMensaje(string msg, string tipo)
+    {
+        mensaje = msg;
+        tipoMensaje = tipo;
+        mostrarMensaje = true;
+        StateHasChanged();
+    }
+
+    private void OcultarMensaje()
+    {
+        mostrarMensaje = false;
+    }
+}
