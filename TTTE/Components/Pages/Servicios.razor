@@ -1,0 +1,385 @@
+﻿@page "/servicios"
+@using TTTE.DTOs
+@using TTTE.Services
+@inject ServicioService ServicioService
+@inject AutheService AuthService
+
+<PageTitle>Gestión de Servicios</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Gestión de Servicios</h1>
+                @if (estaAutenticado)
+                {
+                    <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                        <i class="bi bi-plus-circle"></i> Nuevo Servicio
+                    </button>
+                }
+            </div>
+
+            @if (mostrarMensaje)
+            {
+                <div class="alert @(tipoMensaje == "success" ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @mensaje
+                    <button type="button" class="btn-close" @onclick="OcultarMensaje"></button>
+                </div>
+            }
+
+            @if (!estaAutenticado)
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Debe iniciar sesión para gestionar los servicios.
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lista de Servicios</h5>
+                </div>
+                <div class="card-body">
+                    @if (cargando)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2">Cargando servicios...</p>
+                        </div>
+                    }
+                    else if (servicios != null && servicios.Count == 0)
+                    {
+                        <div class="text-center text-muted">
+                            <i class="bi bi-x-circle" style="font-size: 3rem;"></i>
+                            <p class="mt-2">No hay servicios registrados</p>
+                        </div>
+                    }
+                    else if (servicios != null)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Precio</th>
+                                        <th>Foto</th>
+                                        @if (estaAutenticado)
+                                        {
+                                            <th>Acciones</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var servicio in servicios)
+                                    {
+                                        <tr>
+                                            <td>@servicio.Id</td>
+                                            <td>@servicio.NombreServicio</td>
+                                            <td>@servicio.Precio.ToString("C")</td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(servicio.FotoServicio))
+                                                {
+                                                    <img src="@servicio.FotoServicio" alt="Foto del servicio"
+                                                         style="width: 60px; height: 60px; object-fit: cover;"
+                                                         onerror="this.style.display='none'" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin imagen</span>
+                                                }
+                                            </td>
+                                            @if (estaAutenticado)
+                                            {
+                                                <td>
+                                                    <button class="btn btn-sm btn-warning me-1" @onclick="@(() => AbrirModalEditar(servicio))" title="Editar">
+                                                        <i class="bi bi-pencil">Editar servicio</i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" @onclick="@(() => ConfirmarEliminacion(servicio))" title="Eliminar">
+                                                        <i class="bi bi-trash">Elimnar servicio</i>
+                                                    </button>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> No se pudieron cargar los servicios. Verifique la conexión.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Servicio -->
+@if (mostrarModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(esEdicion ? "Editar Servicio" : "Nuevo Servicio")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal" aria-label="Close"></button>
+                </div>
+                <EditForm Model="servicioFormulario" OnValidSubmit="GuardarServicio">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nombreServicio" class="form-label">Nombre del Servicio *</label>
+                            <InputText id="nombreServicio" class="form-control" @bind-Value="servicioFormulario.NombreServicio" />
+                            <ValidationMessage For="@(() => servicioFormulario.NombreServicio)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Precio *</label>
+                            <InputNumber id="precio" class="form-control" @bind-Value="servicioFormulario.Precio" />
+                            <ValidationMessage For="@(() => servicioFormulario.Precio)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="fotoServicio" class="form-label">URL de la Foto</label>
+                            <InputText id="fotoServicio" class="form-control" @bind-Value="servicioFormulario.FotoServicio" />
+                            <div class="form-text">Ingrese la URL de la imagen del servicio (opcional)</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CerrarModal" disabled="@guardando">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" disabled="@guardando">
+                            @if (guardando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            @(esEdicion ? "Actualizar" : "Crear")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de confirmación para eliminar -->
+@if (mostrarModalConfirmacion)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalConfirmacion"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro de que desea eliminar el servicio "<strong>@servicioAEliminar?.NombreServicio</strong>"?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalConfirmacion">Cancelar</button>
+                    <button type="button" class="btn btn-danger" @onclick="EliminarServicioConfirmado">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ServicioDto>? servicios;
+    private CrearServicioDto servicioFormulario = new();
+    private ServicioDto? servicioAEliminar;
+
+    private bool mostrarModal = false;
+    private bool mostrarModalConfirmacion = false;
+    private bool esEdicion = false;
+    private int servicioEditandoId = 0;
+    private bool guardando = false;
+    private bool cargando = true;
+    private bool estaAutenticado = false;
+
+    private bool mostrarMensaje = false;
+    private string mensaje = "";
+    private string tipoMensaje = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarAutenticacion();
+        await CargarServicios();
+    }
+
+    private async Task VerificarAutenticacion()
+    {
+        estaAutenticado = await AuthService.IsAuthenticated();
+        StateHasChanged();
+    }
+
+    private async Task CargarServicios()
+    {
+        cargando = true;
+        StateHasChanged();
+
+        try
+        {
+            servicios = await ServicioService.ObtenerServiciosAsync();
+            Console.WriteLine($"Servicios cargados: {servicios?.Count ?? 0}");
+
+            if (servicios != null)
+            {
+                foreach (var servicio in servicios)
+                {
+                    Console.WriteLine($"Servicio: {servicio.NombreServicio}, Precio: {servicio.Precio}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar servicios: {ex.Message}");
+            MostrarMensaje("Error al cargar los servicios: " + ex.Message, "error");
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AbrirModalCrear()
+    {
+        servicioFormulario = new CrearServicioDto();
+        esEdicion = false;
+        mostrarModal = true;
+    }
+
+    private void AbrirModalEditar(ServicioDto servicio)
+    {
+        servicioFormulario = new CrearServicioDto
+            {
+                NombreServicio = servicio.NombreServicio,
+                Precio = servicio.Precio,
+                FotoServicio = servicio.FotoServicio
+            };
+        servicioEditandoId = servicio.Id;
+        esEdicion = true;
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+        servicioFormulario = new CrearServicioDto();
+    }
+
+    private void CerrarModalConfirmacion()
+    {
+        servicioAEliminar = null;
+        mostrarModalConfirmacion = false;
+    }
+
+    private async Task GuardarServicio()
+    {
+        guardando = true;
+        StateHasChanged();
+
+        try
+        {
+            // Verificar autenticación antes de realizar la operación
+            if (!estaAutenticado)
+            {
+                MostrarMensaje("Debe iniciar sesión para realizar esta acción", "error");
+                guardando = false;
+                StateHasChanged();
+                return;
+            }
+
+            bool resultado;
+            if (esEdicion)
+            {
+                resultado = await ServicioService.ActualizarServicioAsync(servicioEditandoId, servicioFormulario);
+            }
+            else
+            {
+                resultado = await ServicioService.CrearServicioAsync(servicioFormulario);
+            }
+
+            if (resultado)
+            {
+                MostrarMensaje($"Servicio {(esEdicion ? "actualizado" : "creado")} exitosamente", "success");
+                CerrarModal();
+                await CargarServicios();
+            }
+            else
+            {
+                MostrarMensaje($"Error al {(esEdicion ? "actualizar" : "crear")} el servicio. Verifique su conexión y permisos.", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error: {ex.Message}", "error");
+        }
+        finally
+        {
+            guardando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ConfirmarEliminacion(ServicioDto servicio)
+    {
+        servicioAEliminar = servicio;
+        mostrarModalConfirmacion = true;
+    }
+
+    private async Task EliminarServicioConfirmado()
+    {
+        if (servicioAEliminar != null)
+        {
+            // Verificar autenticación antes de eliminar
+            if (!estaAutenticado)
+            {
+                MostrarMensaje("Debe iniciar sesión para realizar esta acción", "error");
+                CerrarModalConfirmacion();
+                return;
+            }
+
+            var resultado = await ServicioService.EliminarServicioAsync(servicioAEliminar.Id);
+
+            if (resultado)
+            {
+                MostrarMensaje("Servicio eliminado exitosamente", "success");
+                await CargarServicios();
+            }
+            else
+            {
+                MostrarMensaje("Error al eliminar el servicio. Verifique su conexión y permisos.", "error");
+            }
+        }
+
+        CerrarModalConfirmacion();
+    }
+
+    private void MostrarMensaje(string msg, string tipo)
+    {
+        mensaje = msg;
+        tipoMensaje = tipo;
+        mostrarMensaje = true;
+        StateHasChanged();
+
+        Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                mostrarMensaje = false;
+                StateHasChanged();
+            });
+        });
+    }
+
+    private void OcultarMensaje()
+    {
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
+}
