@@ -1,16 +1,30 @@
 ﻿@inherits LayoutComponentBase
 
+
+<style>
+    .top-row {
+        background-color: black !important;
+    }
+</style>
+
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
+
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <a href="" class="text-white d-flex align-items-center gap-2" target="_blank">
+                <span class="bi bi-box-arrow-right" style="font-size:1.2rem;"></span>
+                Cerrar Sesion
+            </a>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
         </div>
+
 
         <article class="content px-4">
             @Body

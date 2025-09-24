@@ -1,6 +1,125 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿<style>
+    .navbar-toggler {
+        appearance: none;
+        cursor: pointer;
+        width: 3.5rem;
+        height: 2.5rem;
+        color: black;
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") no-repeat center/1.75rem rgba(255, 255, 255, 0.1);
+    }
+
+        .navbar-toggler:checked {
+            background-color: #c5ab7a;
+        }
+
+    .top-row {
+        height: 3.5rem;
+        background-color: #c5ab7a;
+    }
+
+    .navbar-brand {
+        font-size: 1.1rem;
+        color: white !important;
+    }
+
+    .nav-item {
+        font-size: 0.9rem;
+        padding-bottom: 0.5rem;
+    }
+
+        .nav-item:first-of-type {
+            padding-top: 1rem;
+        }
+
+        .nav-item:last-of-type {
+            padding-bottom: 1rem;
+        }
+
+        /* Modifica el estilo del nav-link para mejorar el alineamiento */
+        .nav-item ::deep .nav-link {
+            color: black;
+            background: none;
+            border: none;
+            border-radius: 4px;
+            height: 3rem;
+            display: flex;          /* Asegura que sea flex */
+            align-items: center;    /* Centra verticalmente */
+            padding: 0.5rem 1rem;   /* Ajusta el padding */
+            width: 100%;
+            transition: all 0.3s ease;
+            gap: 0.5rem;           /* Espacio entre icono y texto */
+        }
+
+        .nav-item ::deep a.active {
+            background-color: #c5ab7a;
+            color: black;
+        }
+
+        .nav-item ::deep .nav-link:hover {
+            background-color: #c5ab7a;
+            color: black;
+            transform: translateX(5px);
+        }
+
+    .nav-scrollable {
+        background-color: #c5ab7a;
+        display: none;
+    }
+
+    /* Estilos para los íconos */
+    .nav-item ::deep .bi {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+        vertical-align: middle;
+    }
+
+    .navbar-toggler:checked ~ .nav-scrollable {
+        display: block;
+    }
+
+    @@media (min-width: 641px) {
+        .navbar-toggler {
+            display: none;
+        }
+
+        .nav-scrollable {
+            display: block;
+            height: calc(100vh - 3.5rem);
+            overflow-y: auto;
+        }
+    }
+
+    /* Estilo para la barra de desplazamiento */
+    .nav-scrollable::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .nav-scrollable::-webkit-scrollbar-track {
+        background: white;
+    }
+
+    .nav-scrollable::-webkit-scrollbar-thumb {
+        background: #3498db;
+        border-radius: 5px;
+    }
+
+        .nav-scrollable::-webkit-scrollbar-thumb:hover {
+            background: white;
+        }
+
+    navbar{
+        background: white;
+    }
+
+</style>
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">TTTE</a>
+        <a class="navbar-brand" href="">Barberia TTTE</a>
     </div>
 </div>
 
@@ -9,35 +128,38 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link text-black" href="home" Match="NavLinkMatch.All">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house-door-fill" viewBox="0 0 16 16">
+                    <path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5" />
+                </svg> Home
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Servicios 
+            <NavLink class="nav-link text-black" href="servicios">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-scissors" viewBox="0 0 16 16">
+                    <path d="M3.5 3.5c-.614-.884-.074-1.962.858-2.5L8 7.226 11.642 1c.932.538 1.472 1.616.858 2.5L8.81 8.61l1.556 2.661a2.5 2.5 0 1 1-.794.637L8 9.73l-1.572 2.177a2.5 2.5 0 1 1-.794-.637L7.19 8.61zm2.5 10a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0m7 0a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0" />
+                </svg>Servicios
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-    <NavLink class="nav-link" href="servicios">
-        <span class="bi bi-gear-fill" aria-hidden="true"></span> Servicios
-    </NavLink>
-</div
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="citas">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Citas
+            <NavLink class="nav-link text-black" href="citas">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-fill" viewBox="0 0 16 16">
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5h16V4H0V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5" />
+                </svg> Citas
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="personales">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Usuarios
+            <NavLink class="nav-link text-black" href="personales">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-people-fill" viewBox="0 0 16 16">
+                    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                </svg> Usuarios
             </NavLink>
         </div>
-
     </nav>
 </div>
+
+
 
