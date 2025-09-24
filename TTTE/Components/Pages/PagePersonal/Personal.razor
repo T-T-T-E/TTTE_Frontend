@@ -1,0 +1,324 @@
+﻿@page "/personales"
+@using TTTE.DTOs
+@using TTTE.Services
+@inject PersonalService PersonalService
+@inject AutheService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Gestión de Personal</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Gestión de Personal</h1>
+                <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                    <i class="bi bi-plus-circle"></i> Nuevo Personal
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Lista de Personal</h5>
+                </div>
+                <div class="card-body">
+                    @if (personals == null)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (!personals.Any())
+                    {
+                        <div class="text-center text-muted">
+                            <p>No hay personal registrado.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>id</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Rol</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var personal in personals)
+                                    {
+                                        <tr>
+                                            <td>@personal.Id</td>
+                                            <td>@personal.nombreCompleto</td>
+                                            <td>@personal.email</td>
+                                            <td>@personal.telefono</td>
+                                            <td>@(personal.rol == 3 ? "Administrador" : "Barbero")</td>
+                                            <td>
+                                                <button class="btn btn-warning btn-sm me-1" @onclick="() => EditarPersonal(personal)">
+                                                    <i class="bi bi-pencil"></i> Editar
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" @onclick="() => EliminarPersonalConfirmar(personal)">
+                                                    <i class="bi bi-trash"></i> Eliminar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (mostrarModal)
+{
+    <div class="modal" tabindex="-1" style="display:block">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(modoEdicion ? "Editar Personal" : "Nuevo Personal")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!modoEdicion)
+                    {
+                        <EditForm Model="@personalFormulario" OnValidSubmit="GuardarPersonal">
+                            <DataAnnotationsValidator />
+                            <div class="mb-3">
+                                <label for="nombreCompleto" class="form-label">Nombre Completo</label>
+                                <InputText id="nombreCompleto" class="form-control" @bind-Value="personalFormulario.nombreCompleto" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <InputText id="email" class="form-control" @bind-Value="personalFormulario.email" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <InputText id="telefono" class="form-control" @bind-Value="personalFormulario.telefono" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <InputText type="password" id="password" class="form-control" @bind-Value="personalFormulario.password" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="rol" class="form-label">Rol</label>
+                                <select id="rol" class="form-select" @bind="personalFormulario.rol">
+                                    <option value="">Selecione uno</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="barbero">Barbero</option>
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <EditForm Model="@personalFormularioEditar" OnValidSubmit="GuardarPersonalEditar">
+                            <DataAnnotationsValidator />
+                            <div class="mb-3">
+                                <label for="nombreCompletoEditar" class="form-label">Nombre Completo</label>
+                                <InputText id="nombreCompletoEditar" class="form-control" @bind-Value="personalFormularioEditar.nombreCompleto" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailEditar" class="form-label">Email</label>
+                                <InputText id="emailEditar" class="form-control" @bind-Value="personalFormularioEditar.email" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="telefonoEditar" class="form-label">Teléfono</label>
+                                <InputText id="telefonoEditar" class="form-control" @bind-Value="personalFormularioEditar.telefono" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <InputText type="password" id="password" class="form-control" @bind-Value="personalFormularioEditar.password" />
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<DatosPersonal>? personals;
+    // Para crear
+    private CrearPersonal personalFormulario = new();
+    // Para editar
+    private DatosPersonal personalFormularioEditar = new();
+    private bool mostrarModal;
+    private bool modoEdicion;
+    private string? mensajeError;
+    private int? idPersonalEditando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarAutenticacion();
+        await CargarPersonal();
+    }
+
+    private async Task VerificarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
+        if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task CargarPersonal()
+    {
+        try
+        {
+            personals = await PersonalService.ObtenerPersonalAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al cargar el personal: {ex.Message}");
+        }
+    }
+
+    private void AbrirModalCrear()
+    {
+        personalFormulario = new CrearPersonal();
+        modoEdicion = false;
+        mostrarModal = true;
+    }
+
+    private void EditarPersonal(DatosPersonal personal)
+    {
+        personalFormularioEditar = new DatosPersonal
+        {
+            Id = personal.Id,
+            nombreCompleto = personal.nombreCompleto,
+            email = personal.email,
+            telefono = personal.telefono,
+            password = ""
+        };
+        idPersonalEditando = personal.Id;
+        modoEdicion = true;
+        mostrarModal = true;
+    }
+
+    private async Task EliminarPersonalConfirmar(DatosPersonal personal)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de eliminar este personal?"))
+        {
+            var resultado = await PersonalService.EliminarPersonalAsync(personal.Id);
+            if (resultado)
+            {
+                await CargarPersonal();
+                await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
+            }
+        }
+    }
+
+    private async Task EliminarPersonalConfirmar(int id)
+    {
+        bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de que desea eliminar esta cita?");
+
+        if (confirmado)
+        {
+            await EliminarPersonal(id);
+        }
+    }
+
+    private async Task EliminarPersonal(int id)
+    {
+        var resultado = await PersonalService.EliminarPersonalAsync(id);
+
+
+        try
+        {
+            if (resultado)
+            {
+                await CargarPersonal();
+                await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar el personal: {ex.Message}");
+        }
+
+    }
+
+    private async Task GuardarPersonal()
+    {
+        try
+        {
+            var resultado = await PersonalService.CrearPersonalAsync(personalFormulario);
+            if (resultado)
+            {
+                await CargarPersonal();
+                CerrarModal();
+                await JSRuntime.InvokeVoidAsync("alert", "Personal creado correctamente");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al guardar el personal: {ex.Message}");
+        }
+    }
+
+    private async Task GuardarPersonalEditar()
+    {
+        try
+        {
+            var personalActualizar = new ActualizarPersonal
+            {
+                nombreCompleto = personalFormularioEditar.nombreCompleto,
+                email = personalFormularioEditar.email,
+                telefono = personalFormularioEditar.telefono,
+                password = string.IsNullOrWhiteSpace(personalFormularioEditar.password) ? "" : personalFormularioEditar.password
+            };
+            var resultado = await PersonalService.ActualizarPersonalAsync(idPersonalEditando ?? 0, personalActualizar);
+            if (resultado)
+            {
+                await CargarPersonal();
+                CerrarModal();
+                await JSRuntime.InvokeVoidAsync("alert", "Personal actualizado correctamente");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Error al actualizar el personal.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al actualizar el personal: {ex.Message}");
+        }
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+        personalFormulario = new CrearPersonal();
+        personalFormularioEditar = new DatosPersonal();
+        modoEdicion = false;
+    }
+}
+
+

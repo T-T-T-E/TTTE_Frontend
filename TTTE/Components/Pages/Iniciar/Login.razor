@@ -13,9 +13,11 @@
 
     private UserSession userSession = new UserSession();
     private string errorMessage;
+    private bool loading;
 
     private async Task LoginForm()
     {
+        loading = true;
         try
         {
             var token = await authService.Login(userSession);
@@ -92,7 +94,17 @@
                 </div>
 
                 <div class="d-grid gap-2 mb-3">
-                    <button type="submit" class="buttonstyleLogin">Entrar</button>
+                    <button type="submit" class="buttonstyleLogin" disabled="@loading">
+                        @if (loading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span class="ms-2">Ingresando...</span>
+                        }
+                        else
+                        {
+                            <span>Ingresar</span>
+                        }
+                        </button>
                     <a href="/CreateCliente" class="buttonstyleCreate">Crear cuenta para clientes</a>
                 </div>
             </EditForm>
@@ -103,6 +115,8 @@
                 <div class="alert alert-danger" role="alert">@errorMessage</div>
 
             }
+
+           
 
         </div>
         <div class="login-image-section">

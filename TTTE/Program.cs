@@ -9,12 +9,11 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped(o => new HttpClient
 {
-    BaseAddress = new Uri("https://ttte-devs.onrender.com/")
+    BaseAddress = new Uri("https://ttte-devs.onrender.com")
 });
 
 builder.Services.AddScoped<AutheService>();
 builder.Services.AddScoped<CitaService>();
-builder.Services.AddScoped<ServicioService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
