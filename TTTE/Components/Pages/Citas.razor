@@ -13,10 +13,53 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>Gestión de Citas</h1>
-                <button class="btn btn-primary" @onclick="AbrirModalCrear">
-                    <i class="bi bi-plus-circle"></i> Nueva Cita
-                </button>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" @onclick="ToggleFiltroBarbero">
+                        <i class="bi bi-funnel"></i> Filtrar por Barbero
+                    </button>
+                    <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                        <i class="bi bi-plus-circle"></i> Nueva Cita
+                    </button>
+                </div>
             </div>
+
+            <!-- Filtro por Barbero -->
+            @if (mostrarFiltroBarbero)
+            {
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Filtrar citas por Barbero</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <select class="form-select" @bind="idBarberoSeleccionado">
+                                        <option value="0">Seleccione un barbero...</option>
+                                        @foreach (var barbero in barberos)
+                                        {
+                                            <option value="@barbero.Id">@barbero.nombreCompleto</option>
+                                        }
+                                    </select>
+                                    <button class="btn btn-primary" @onclick="AplicarFiltroBarbero"
+                                            disabled="@(idBarberoSeleccionado == 0)">
+                                        <i class="bi bi-search"></i> Buscar
+                                    </button>
+                                    <button class="btn btn-secondary" @onclick="LimpiarFiltro">
+                                        <i class="bi bi-x-circle"></i> Limpiar
+                                    </button>
+                                </div>
+                                @if (barberos.Count == 0)
+                                {
+                                    <div class="text-warning mt-2">
+                                        <small>No se encontraron barberos registrados</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
 
             @if (mostrarMensaje)
             {
@@ -27,26 +70,42 @@
             }
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Lista de Citas</h5>
+                    @if (filtroAplicado && barberoSeleccionado != null)
+                    {
+                        <span class="badge bg-info">
+                            Filtrado por: @barberoSeleccionado.nombreCompleto
+                        </span>
+                    }
                 </div>
                 <div class="card-body">
-                    @if (citas == null)
+                    @if (cargando)
                     {
                         <div class="text-center">
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
+                            <p class="mt-2">Cargando citas...</p>
                         </div>
                     }
-                    else if (citas.Count == 0)
+                    else if (citas != null && citas.Count == 0)
                     {
                         <div class="text-center text-muted">
                             <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
-                            <p class="mt-2">No hay citas registradas</p>
+                            <p class="mt-2">
+                                @if (filtroAplicado && barberoSeleccionado != null)
+                                {
+                                    <span>No hay citas registradas para el barbero: @barberoSeleccionado.nombreCompleto</span>
+                                }
+                                else
+                                {
+                                    <span>No hay citas registradas</span>
+                                }
+                            </p>
                         </div>
                     }
-                    else
+                    else if (citas != null)
                     {
                         <div class="table-responsive">
                             <table class="table table-striped table-hover">
@@ -68,21 +127,39 @@
                                             <td>@cita.Id</td>
                                             <td>@cita.NombreCliente</td>
                                             <td>@cita.IdServicio</td>
-                                            <td>@cita.IdBarbero</td>
+                                            <td>
+                                                @{
+                                                    var barberoCita = barberos.FirstOrDefault(b => b.Id == cita.IdBarbero);
+                                                }
+                                                @if (barberoCita != null)
+                                                {
+                                                    @barberoCita.nombreCompleto
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Barbero @cita.IdBarbero</span>
+                                                }
+                                            </td>
                                             <td>@cita.Fecha.ToString("dd/MM/yyyy")</td>
                                             <td>@cita.Hora.ToString(@"hh\:mm")</td>
                                             <td>
                                                 <button class="btn btn-sm btn-warning me-1" @onclick="@(() => AbrirModalEditar(cita))">
-                                                    <i class="bi bi-pencil">Editar Cita</i>
+                                                    <i class="bi bi-pencil"></i> Editar
                                                 </button>
                                                 <button class="btn btn-sm btn-danger" @onclick="@(() => EliminarCitaConfirmar(cita.Id))">
-                                                    <i class="bi bi-trash">Elimnar Cita</i>
+                                                    <i class="bi bi-trash"></i> Eliminar
                                                 </button>
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> No se pudieron cargar las citas. Verifique la conexión.
                         </div>
                     }
                 </div>
@@ -103,26 +180,32 @@
                 <DataAnnotationsValidator />
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nombre del Cliente</label>
+                        <label class="form-label">Nombre del Cliente *</label>
                         <InputText class="form-control" @bind-Value="citaFormulario.NombreCliente" />
                         <ValidationMessage For="@(() => citaFormulario.NombreCliente)" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">ID Servicio</label>
+                        <label class="form-label">ID Servicio *</label>
                         <InputNumber class="form-control" @bind-Value="citaFormulario.IdServicio" />
                         <ValidationMessage For="@(() => citaFormulario.IdServicio)" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">ID Barbero</label>
-                        <InputNumber class="form-control" @bind-Value="citaFormulario.IdBarbero" />
+                        <label class="form-label">Barbero *</label>
+                        <select class="form-select" @bind="citaFormulario.IdBarbero">
+                            <option value="0">Seleccione un barbero...</option>
+                            @foreach (var barbero in barberos)
+                            {
+                                <option value="@barbero.Id">@barbero.nombreCompleto</option>
+                            }
+                        </select>
                         <ValidationMessage For="@(() => citaFormulario.IdBarbero)" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Fecha</label>
+                        <label class="form-label">Fecha *</label>
                         <InputDate class="form-control" @bind-Value="fechaSeleccionada" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Hora requerido cambiar*</label>
+                        <label class="form-label">Hora *</label>
                         <InputText type="time" class="form-control" @bind-Value="citaFormulario.Hora" />
                         <ValidationMessage For="@(() => citaFormulario.Hora)" />
                     </div>
@@ -149,12 +232,20 @@
 
 @code {
     private List<CitaDto>? citas;
+    private List<DatosPersonal> barberos = new();
     private CrearCitaDto citaFormulario = new();
     private bool mostrarModal = false;
     private bool esEdicion = false;
     private int citaEditandoId = 0;
     private bool guardando = false;
+    private bool cargando = true;
     private DateTime fechaSeleccionada = DateTime.Today;
+
+    // Variables para el filtro de barbero
+    private bool mostrarFiltroBarbero = false;
+    private int idBarberoSeleccionado = 0;
+    private DatosPersonal? barberoSeleccionado = null;
+    private bool filtroAplicado = false;
 
     private bool mostrarMensaje = false;
     private string mensaje = "";
@@ -163,7 +254,8 @@
     protected override async Task OnInitializedAsync()
     {
         await VerificarAutenticacion();
-        await CargarCitas();
+        await CargarBarberos();
+        await CargarTodasLasCitas();
     }
 
     private async Task VerificarAutenticacion()
@@ -171,15 +263,109 @@
         var token = await AuthService.GetToken();
         if (string.IsNullOrEmpty(token))
         {
-            // Redirigir al login si no hay token
             Navigation.NavigateTo("/");
         }
     }
 
-    private async Task CargarCitas()
+    private async Task CargarBarberos()
     {
-        citas = await CitaService.ObtenerCitasAsync();
+        try
+        {
+            barberos = await CitaService.ObtenerBarberosAsync();
+            if (barberos.Count == 0)
+            {
+                Console.WriteLine("No se encontraron barberos");
+                MostrarMensaje("No se encontraron barberos registrados", "warning");
+            }
+            else
+            {
+                Console.WriteLine($"Se cargaron {barberos.Count} barberos");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar barberos: {ex.Message}");
+            MostrarMensaje("Error al cargar la lista de barberos", "error");
+        }
+    }
+
+    private async Task CargarTodasLasCitas()
+    {
+        cargando = true;
         StateHasChanged();
+
+        try
+        {
+            citas = await CitaService.ObtenerCitasAsync();
+            filtroAplicado = false;
+            barberoSeleccionado = null;
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje("Error al cargar las citas: " + ex.Message, "error");
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AplicarFiltroBarbero()
+    {
+        if (idBarberoSeleccionado <= 0)
+        {
+            MostrarMensaje("Por favor seleccione un barbero", "error");
+            return;
+        }
+
+        cargando = true;
+        StateHasChanged();
+
+        try
+        {
+            citas = await CitaService.ObtenerCitasPorBarberoAsync(idBarberoSeleccionado);
+            barberoSeleccionado = barberos.FirstOrDefault(b => b.Id == idBarberoSeleccionado);
+            filtroAplicado = true;
+
+            if (citas.Count == 0)
+            {
+                MostrarMensaje($"No se encontraron citas para el barbero: {barberoSeleccionado?.nombreCompleto}", "info");
+            }
+            else
+            {
+                MostrarMensaje($"Se encontraron {citas.Count} citas para el barbero: {barberoSeleccionado?.nombreCompleto}", "success");
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error al filtrar citas: {ex.Message}", "error");
+            await CargarTodasLasCitas();
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LimpiarFiltro()
+    {
+        idBarberoSeleccionado = 0;
+        barberoSeleccionado = null;
+        filtroAplicado = false;
+        mostrarFiltroBarbero = false;
+        await CargarTodasLasCitas();
+        MostrarMensaje("Filtro limpiado - mostrando todas las citas", "info");
+    }
+
+    private void ToggleFiltroBarbero()
+    {
+        mostrarFiltroBarbero = !mostrarFiltroBarbero;
+        if (!mostrarFiltroBarbero && filtroAplicado)
+        {
+            _ = LimpiarFiltro();
+        }
     }
 
     private void AbrirModalCrear()
@@ -233,7 +419,14 @@
         {
             MostrarMensaje($"Cita {(esEdicion ? "actualizada" : "creada")} exitosamente", "success");
             CerrarModal();
-            await CargarCitas();
+            if (filtroAplicado)
+            {
+                await AplicarFiltroBarbero();
+            }
+            else
+            {
+                await CargarTodasLasCitas();
+            }
         }
         else
         {
@@ -246,7 +439,6 @@
     private async Task EliminarCitaConfirmar(int id)
     {
         bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de que desea eliminar esta cita?");
-
         if (confirmado)
         {
             await EliminarCita(id);
@@ -256,11 +448,17 @@
     private async Task EliminarCita(int id)
     {
         var resultado = await CitaService.EliminarCitaAsync(id);
-
         if (resultado)
         {
             MostrarMensaje("Cita eliminada exitosamente", "success");
-            await CargarCitas();
+            if (filtroAplicado)
+            {
+                await AplicarFiltroBarbero();
+            }
+            else
+            {
+                await CargarTodasLasCitas();
+            }
         }
         else
         {
@@ -274,10 +472,20 @@
         tipoMensaje = tipo;
         mostrarMensaje = true;
         StateHasChanged();
+
+        Task.Delay(5000).ContinueWith(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                mostrarMensaje = false;
+                StateHasChanged();
+            });
+        });
     }
 
     private void OcultarMensaje()
     {
         mostrarMensaje = false;
+        StateHasChanged();
     }
 }

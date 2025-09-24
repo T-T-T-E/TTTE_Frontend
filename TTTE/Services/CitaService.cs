@@ -157,7 +157,7 @@ namespace TTTE.Services
             if (!await ConfigurarAutenticacionAsync())
                 return new List<CitaDto>();
 
-            var response = await _httpClient.GetAsync($"https://ttte-devs.onrender.com/citas/barbero/{idBarbero}");
+            var response = await _httpClient.GetAsync($"{_baseUrl}/barbero/{idBarbero}");
             if (!response.IsSuccessStatusCode)
                 return new List<CitaDto>();
 
@@ -166,6 +166,43 @@ namespace TTTE.Services
             return JsonSerializer.Deserialize<List<CitaDto>>(json, options) ?? new List<CitaDto>();
         }
 
+        public async Task<List<DatosPersonal>> ObtenerBarberosAsync()
+        {
+            try
+            {
+                if (!await ConfigurarAutenticacionAsync())
+                    return new List<DatosPersonal>();
+
+                var response = await _httpClient.GetAsync("https://ttte-devs.onrender.com/api/users");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Error al obtener usuarios: {response.StatusCode}");
+                    return new List<DatosPersonal>();
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"JSON de usuarios recibido: {json}");
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var todosLosUsuarios = JsonSerializer.Deserialize<List<DatosPersonal>>(json, options) ?? new List<DatosPersonal>();
+
+                // dejo esto pendiente por si acaso es necesario
+                var barberos = todosLosUsuarios.Where(u => u.rol == 2).ToList();
+                Console.WriteLine($"Barberos encontrados: {barberos.Count}");
+
+                return barberos;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener barberos: {ex.Message}");
+                return new List<DatosPersonal>();
+            }
+        }
         public async Task<bool> EliminarCitaAsync(int id)
         {
             try
