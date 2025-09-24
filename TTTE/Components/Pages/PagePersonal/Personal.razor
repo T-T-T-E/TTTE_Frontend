@@ -52,7 +52,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var personal in personals)
+                                    @foreach (var personal in GetPagedPersonal())
                                     {
                                         <tr>
                                             <td>@personal.Id</td>
@@ -72,6 +72,40 @@
                                     }
                                 </tbody>
                             </table>
+
+                            @* Agregar controles de paginación *@
+                            @if ((personals?.Count ?? 0) > 0)
+                            {
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        Mostrando @(((currentPage - 1) * pageSize) + 1) a @(Math.Min(currentPage * pageSize, personals?.Count ?? 0)) de @(personals?.Count ?? 0) registros
+                                    </div>
+                                    <nav>
+                                        <ul class="pagination">
+                                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                                <button class="page-link" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage == 1)">
+                                                    Anterior
+                                                </button>
+                                            </li>
+
+                                            @for (int i = 1; i <= totalPages; i++)
+                                            {
+                                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                                    <button class="page-link" @onclick="() => ChangePage(i)">
+                                                        @i
+                                                    </button>
+                                                </li>
+                                            }
+
+                                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                                <button class="page-link" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage == totalPages)">
+                                                    Siguiente
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
@@ -168,6 +202,13 @@
     private string? mensajeError;
     private int? idPersonalEditando;
 
+    // Variables para paginación
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => personals is { Count: > 0 }
+    ? (int)Math.Ceiling(personals.Count / (double)pageSize)
+    : 1;
+
     protected override async Task OnInitializedAsync()
     {
         await VerificarAutenticacion();
@@ -188,6 +229,7 @@
         try
         {
             personals = await PersonalService.ObtenerPersonalAsync();
+            currentPage = 1; // Resetear a la primera página cuando se cargan nuevos datos
             StateHasChanged();
         }
         catch (Exception ex)
@@ -318,6 +360,23 @@
         personalFormulario = new CrearPersonal();
         personalFormularioEditar = new DatosPersonal();
         modoEdicion = false;
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            currentPage = page;
+            StateHasChanged();
+        }
+    }
+
+    private IEnumerable<DatosPersonal> GetPagedPersonal()
+    {
+        return personals?
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            ?? Enumerable.Empty<DatosPersonal>();
     }
 }
 
