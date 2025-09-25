@@ -64,7 +64,7 @@
                                                 <button class="btn btn-warning btn-sm me-1" @onclick="() => EditarPersonal(personal)">
                                                     <i class="bi bi-pencil"></i> Editar
                                                 </button>
-                                                <button class="btn btn-danger btn-sm" @onclick="() => EliminarPersonalConfirmar(personal)">
+                                                <button class="btn btn-danger btn-sm" @onclick="() => MostrarModalEliminar(personal)">
                                                     <i class="bi bi-trash"></i> Eliminar
                                                 </button>
                                             </td>
@@ -191,8 +191,31 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+@* Modal de confirmación de eliminación *@
+@if (mostrarModalConfirmacion)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalConfirmacion"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro de que desea eliminar al usuario <strong>@Eliminarpersonal?.nombreCompleto</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalConfirmacion">Cancelar</button>
+                    <button type="button" class="btn btn-danger" @onclick="EliminarPersonal">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<DatosPersonal>? personals;
+    private DatosPersonal? Eliminarpersonal;
     // Para crear
     private CrearPersonal personalFormulario = new();
     // Para editar
@@ -201,6 +224,9 @@
     private bool modoEdicion;
     private string? mensajeError;
     private int? idPersonalEditando;
+
+    // Para eliminar
+    private bool mostrarModalConfirmacion = false;
 
     // Variables para paginación
     private int currentPage = 1;
@@ -260,52 +286,37 @@
         mostrarModal = true;
     }
 
-    private async Task EliminarPersonalConfirmar(DatosPersonal personal)
+    // Llama este método desde el botón de la tabla
+private void MostrarModalEliminar(DatosPersonal personal)
+{
+    Eliminarpersonal = personal;
+    mostrarModalConfirmacion = true;
+}
+
+private void CerrarModalConfirmacion()
+{
+    Eliminarpersonal = null;
+    mostrarModalConfirmacion = false;
+}
+
+private async Task EliminarPersonal()
+{
+    if (Eliminarpersonal is null)
+        return;
+
+    var resultado = await PersonalService.EliminarPersonalAsync(Eliminarpersonal.Id);
+    mostrarModalConfirmacion = false;
+
+    if (resultado)
     {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de eliminar este personal?"))
-        {
-            var resultado = await PersonalService.EliminarPersonalAsync(personal.Id);
-            if (resultado)
-            {
-                await CargarPersonal();
-                await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
-            }
-        }
+        await CargarPersonal();
+        await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
     }
-
-    private async Task EliminarPersonalConfirmar(int id)
+    else
     {
-        bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro de que desea eliminar esta cita?");
-
-        if (confirmado)
-        {
-            await EliminarPersonal(id);
-        }
+        await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
     }
-
-    private async Task EliminarPersonal(int id)
-    {
-        var resultado = await PersonalService.EliminarPersonalAsync(id);
-
-
-        try
-        {
-            if (resultado)
-            {
-                await CargarPersonal();
-                await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
-            }
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar el personal: {ex.Message}");
-        }
-
-    }
+}
 
     private async Task GuardarPersonal()
     {

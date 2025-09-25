@@ -72,5 +72,36 @@ namespace TTTE.Services
             await _localStore.DeleteAsync("token");
 
         }
+
+        public async Task<string> GetUserRoleAsync()
+        {
+            try
+            {
+                var token = await GetToken();
+                if (string.IsNullOrEmpty(token))
+                    return "";
+
+                // Decodifica el token (asumiendo que es JWT)
+                var handler = new JwtSecurityTokenHandler();
+                var jsonToken = handler.ReadToken(token) as JwtSecurityToken;
+
+                if (jsonToken == null)
+                    return "";
+
+                // Busca el claim del rol
+                var rolClaim = jsonToken.Claims.FirstOrDefault(claim => claim.Type == "rol");
+                if (rolClaim != null)
+                {
+                    // Devuelve "admin" o "cliente" según el valor del rol
+                    return rolClaim.Value;
+                }
+
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
     }
 }
