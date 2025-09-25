@@ -1,12 +1,13 @@
-﻿@inherits LayoutComponentBase
-
+﻿@using TTTE.Services 
+@inject NavigationManager Navigation
+@inject AutheService AuthService
+@inherits LayoutComponentBase
 
 <style>
     .top-row {
         background-color: black !important;
     }
 </style>
-
 
 <div class="page">
     <div class="sidebar">
@@ -16,7 +17,7 @@
     <main>
 
         <div class="top-row px-4">
-            <a href="" class="text-white d-flex align-items-center gap-2" target="_blank">
+            <a @onclick="CerrarSesion" class="text-white d-flex align-items-center gap-2" style="cursor:pointer;">
                 <span class="bi bi-box-arrow-right" style="font-size:1.2rem;"></span>
                 Cerrar Sesion
             </a>
@@ -24,7 +25,6 @@
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
         </div>
-
 
         <article class="content px-4">
             @Body
@@ -37,3 +37,12 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+
+    private async Task CerrarSesion()
+    {
+        await AuthService.Logout();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

@@ -6,7 +6,6 @@ namespace TTTE.Services
 {
     public class AutheService
     {
-
         private readonly ProtectedSessionStorage _localStore;
         private readonly HttpClient _httpClient;
         private string? _token;

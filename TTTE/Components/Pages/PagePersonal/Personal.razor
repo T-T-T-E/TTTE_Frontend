@@ -59,7 +59,21 @@
                                             <td>@personal.nombreCompleto</td>
                                             <td>@personal.email</td>
                                             <td>@personal.telefono</td>
-                                            <td>@(personal.rol == 3 ? "Administrador" : "Barbero")</td>
+                                            <td>
+                                                @if (personal.rol == 3)
+                                                {
+                                                    <span>Administrador</span>
+                                                }
+                                                else if (personal.rol == 1)
+                                                {
+                                                    <span>Cliente</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Barbero</span>
+                                                }
+                                            </td>
+
                                             <td>
                                                 <button class="btn btn-warning btn-sm me-1" @onclick="() => EditarPersonal(personal)">
                                                     <i class="bi bi-pencil"></i> Editar
@@ -287,36 +301,36 @@
     }
 
     // Llama este método desde el botón de la tabla
-private void MostrarModalEliminar(DatosPersonal personal)
-{
-    Eliminarpersonal = personal;
-    mostrarModalConfirmacion = true;
-}
-
-private void CerrarModalConfirmacion()
-{
-    Eliminarpersonal = null;
-    mostrarModalConfirmacion = false;
-}
-
-private async Task EliminarPersonal()
-{
-    if (Eliminarpersonal is null)
-        return;
-
-    var resultado = await PersonalService.EliminarPersonalAsync(Eliminarpersonal.Id);
-    mostrarModalConfirmacion = false;
-
-    if (resultado)
+    private void MostrarModalEliminar(DatosPersonal personal)
     {
-        await CargarPersonal();
-        await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
+        Eliminarpersonal = personal;
+        mostrarModalConfirmacion = true;
     }
-    else
+
+    private void CerrarModalConfirmacion()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
+        Eliminarpersonal = null;
+        mostrarModalConfirmacion = false;
     }
-}
+
+    private async Task EliminarPersonal()
+    {
+        if (Eliminarpersonal is null)
+            return;
+
+        var resultado = await PersonalService.EliminarPersonalAsync(Eliminarpersonal.Id);
+        mostrarModalConfirmacion = false;
+
+        if (resultado)
+        {
+            await CargarPersonal();
+            await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
+        }
+    }
 
     private async Task GuardarPersonal()
     {
