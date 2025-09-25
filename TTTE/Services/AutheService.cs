@@ -36,19 +36,20 @@ namespace TTTE.Services
 
         public async Task<string?> GetToken()
         {
-            var localStoreResult = await _localStore.GetAsync<string>("token");
-
-            if (string.IsNullOrEmpty(_token))
+            try
             {
-                if (!localStoreResult.Success || string.IsNullOrEmpty(localStoreResult.Value))
-                {
-                    _token = null;
-                    return null;
-                }
-                _token = localStoreResult.Value;
+                var localStoreResult = await _localStore.GetAsync<string>("token");
+                return localStoreResult.Success ? localStoreResult.Value : null;
             }
-            return _token;
-
+            catch (InvalidOperationException)
+            {
+                // Manejar el caso de prerendering
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public async Task<bool> IsAuthenticated()

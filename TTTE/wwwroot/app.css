@@ -56,8 +56,25 @@ h1:focus {
 
 .page-link {
     cursor: pointer;
+    background-color: #c5ab7a;
+    color: black;
 }
 
 .page-item.disabled .page-link {
     cursor: not-allowed;
+    color: white;
+    background-color: black;
 }
+
+.page-item.active .page-link {
+    background-color: black;
+    border-color : black;
+}
+
+.page-link:hover {
+    background-color: black;
+    color: white !important; /* El !important asegura que sobrescriba otros estilos */
+    border-color: black;
+}
+
+

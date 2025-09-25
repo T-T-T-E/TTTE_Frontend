@@ -1,6 +1,7 @@
 ﻿@using TTTE.Services 
 @inject NavigationManager Navigation
 @inject AutheService AuthService
+@inject IJSRuntime JSRuntime
 @inherits LayoutComponentBase
 
 <style>
@@ -15,7 +16,6 @@
     </div>
 
     <main>
-
         <div class="top-row px-4">
             <a @onclick="CerrarSesion" class="text-white d-flex align-items-center gap-2" style="cursor:pointer;">
                 <span class="bi bi-box-arrow-right" style="font-size:1.2rem;"></span>
@@ -39,10 +39,39 @@
 </div>
 
 @code {
+    private bool isAuthenticated = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var token = await AuthService.GetToken();
+                isAuthenticated = !string.IsNullOrEmpty(token);
+                if (!isAuthenticated)
+                {
+                    Navigation.NavigateTo("/home", forceLoad: true);
+                }
+                StateHasChanged();
+            }
+            catch
+            {
+                Navigation.NavigateTo("/home", forceLoad: true);
+            }
+        }
+    }
 
     private async Task CerrarSesion()
     {
-        await AuthService.Logout();
-        Navigation.NavigateTo("/", forceLoad: true);
+        try
+        {
+            await AuthService.Logout();
+        }
+        catch
+        {
+            // Si falla el cierre de sesión normal, forzar la recarga
+            await JSRuntime.InvokeVoidAsync("location.reload", true);
+        }
     }
 }
