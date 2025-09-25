@@ -67,6 +67,7 @@
         try
         {
             await AuthService.Logout();
+            Navigation.NavigateTo("/", forceLoad: true);
         }
         catch
         {
