@@ -31,7 +31,7 @@
 
             // Si el token tiene un valor, el login fue exitoso.
             await authService.SetToken(token);
-            navigationManager.NavigateTo("/Weather");
+            navigationManager.NavigateTo("/home");
 
         }
         catch (Exception ex)
