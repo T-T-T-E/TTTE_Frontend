@@ -100,8 +100,8 @@ public class PersonalService
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error al crear personal: {response.StatusCode} - {errorContent}");
-                return false;
+                // Devuelve el error para mostrarlo en el alert
+                throw new Exception($"API: {response.StatusCode} - {errorContent}");
             }
 
             return true;
@@ -109,7 +109,7 @@ public class PersonalService
         catch (Exception ex)
         {
             Console.WriteLine($"Error al crear personal: {ex.Message}");
-            return false;
+            throw;
         }
     }
 

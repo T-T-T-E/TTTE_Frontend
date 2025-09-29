@@ -17,7 +17,10 @@
 
     private async Task LoginForm()
     {
+        // 1. Iniciar la carga
         loading = true;
+        errorMessage = string.Empty; // Limpiar mensaje de error anterior
+        
         try
         {
             var token = await authService.Login(userSession);
@@ -26,17 +29,24 @@
             if (string.IsNullOrEmpty(token))
             {
                 errorMessage = "Credenciales incorrectas";
+                // No es necesario establecer 'loading = false' aquí si usamos 'finally'
                 return;
             }
 
             // Si el token tiene un valor, el login fue exitoso.
             await authService.SetToken(token);
+            // El 'loading = false' se ejecuta en el 'finally' después de la navegación, 
+            // aunque en Blazor la navegación a otra página lo limpiará de todos modos.
             navigationManager.NavigateTo("/home");
-
         }
         catch (Exception ex)
         {
             errorMessage = $"Ocurrió un error: {ex.Message}";
+        }
+        finally
+        {
+            // 2. Detener la carga siempre, independientemente del resultado (éxito, fallo de credenciales o excepción).
+            loading = false;
         }
     }
 
@@ -95,16 +105,17 @@
 
                 <div class="d-grid gap-2 mb-3">
                     <button type="submit" class="buttonstyleLogin" disabled="@loading">
-                        @if (loading)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            <span class="ms-2">Ingresando...</span>
-                        }
-                        else
-                        {
-                            <span>Ingresar</span>
-                        }
-                        </button>
+                     @if (loading)
+                     {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-2">Ingresando...</span>
+                     }
+                     else
+                     {
+                         <span>Ingresar</span>
+                     }
+                     </button>
+                  
                     <a href="/CreateCliente" class="buttonstyleCreate">Crear cuenta para clientes</a>
                 </div>
             </EditForm>

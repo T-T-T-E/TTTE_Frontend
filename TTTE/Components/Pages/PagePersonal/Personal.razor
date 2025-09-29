@@ -18,6 +18,15 @@
                 </button>
             </div>
 
+            @if (!string.IsNullOrEmpty(mensajeNotificacion))
+            {
+                <div class="alert @claseNotificacion alert-dismissible fade show" role="alert">
+                    @mensajeNotificacion
+                    <button type="button" class="btn-close" @onclick="() => mensajeNotificacion = null" aria-label="Close"></button>
+                </div>
+            }
+
+
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Lista de Personal</h5>
@@ -128,6 +137,9 @@
     </div>
 </div>
 
+
+
+
 @if (mostrarModal)
 {
     <div class="modal" tabindex="-1" style="display:block">
@@ -236,7 +248,12 @@
     private DatosPersonal personalFormularioEditar = new();
     private bool mostrarModal;
     private bool modoEdicion;
-    private string? mensajeError;
+
+    // Variables para el mensaje de notificación
+    private string mensajeNotificacion;
+    private string claseNotificacion;
+    private bool mostrarMensaje = false;
+
     private int? idPersonalEditando;
 
     // Para eliminar
@@ -268,13 +285,17 @@
     {
         try
         {
-            personals = await PersonalService.ObtenerPersonalAsync();
+            var listaOriginal = await PersonalService.ObtenerPersonalAsync();
             currentPage = 1; // Resetear a la primera página cuando se cargan nuevos datos
+            personals = listaOriginal
+                .OrderByDescending(p => p.Id)
+                .ToList();
+
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al cargar el personal: {ex.Message}");
+            MostrarMensaje($"Error al cargar el personal: {ex.Message}", false);
         }
     }
 
@@ -324,11 +345,11 @@
         if (resultado)
         {
             await CargarPersonal();
-            await JSRuntime.InvokeVoidAsync("alert", "Personal eliminado correctamente");
+            MostrarMensaje("Personal eliminado correctamente", true); // ✅ Muestra mensaje de éxito
         }
         else
         {
-            await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el personal.");
+            MostrarMensaje("No se pudo eliminar el personal.", false); // ❌ Muestra mensaje de error
         }
     }
 
@@ -341,12 +362,12 @@
             {
                 await CargarPersonal();
                 CerrarModal();
-                await JSRuntime.InvokeVoidAsync("alert", "Personal creado correctamente");
+                MostrarMensaje("Personal creado correctamente", true); // ✅ Muestra mensaje de éxito
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al guardar el personal: {ex.Message}");
+            MostrarMensaje($"Error al guardar el personal: {ex.Message}", false); // ❌ Muestra mensaje de error
         }
     }
 
@@ -366,19 +387,18 @@
             {
                 await CargarPersonal();
                 CerrarModal();
-                await JSRuntime.InvokeVoidAsync("alert", "Personal actualizado correctamente");
+                MostrarMensaje("Personal actualizado correctamente", true); // ✅ Muestra mensaje de éxito
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Error al actualizar el personal.");
+                MostrarMensaje("Error al actualizar el personal.", false); // ❌ Muestra mensaje de error
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al actualizar el personal: {ex.Message}");
+            MostrarMensaje($"Error al actualizar el personal: {ex.Message}", false); // ❌ Muestra mensaje de error
         }
     }
-
     private void CerrarModal()
     {
         mostrarModal = false;
@@ -403,6 +423,26 @@
             .Take(pageSize)
             ?? Enumerable.Empty<DatosPersonal>();
     }
+
+    // Función auxiliar para mostrar el mensaje
+    private async void MostrarMensaje(string mensaje, bool esExito)
+    {
+
+        mensajeNotificacion = mensaje;
+        claseNotificacion = esExito ? "alert-success" : "alert-danger";
+        mostrarMensaje = true;
+        OcultarMensajeAutomatico();
+
+    }
+
+    private async Task OcultarMensajeAutomatico()
+    {
+        await Task.Delay(5000);
+        mostrarMensaje = false;
+        StateHasChanged();
+    }
+
+
 }
 
 
