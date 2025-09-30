@@ -93,7 +93,7 @@
 										<tr>
 											<td>@servicio.Id</td>
 											<td>@servicio.NombreServicio</td>
-											<td>@servicio.Precio.ToString("C")</td>
+											<td>@servicio.Precio.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
 											<td>
 												@if (!string.IsNullOrEmpty(servicio.FotoServicio))
 												{
@@ -181,7 +181,7 @@
 							<ValidationMessage For="@(() => servicioFormulario.NombreServicio)" />
 						</div>
 						<div class="mb-3">
-							<label for="precio" class="form-label">Precio *</label>
+							<label for="precio" class="form-label">Precio requerido *</label>
 							<InputNumber id="precio" class="form-control" @bind-Value="servicioFormulario.Precio" />
 							<ValidationMessage For="@(() => servicioFormulario.Precio)" />
 						</div>
@@ -282,7 +282,7 @@
 
 	private bool PuedeGestionarServicios()
 	{
-		return estaAutenticado && rolUsuario == 3;
+		return estaAutenticado && (rolUsuario == 2 || rolUsuario == 3);
 	}
 
 	private async Task CargarServicios()

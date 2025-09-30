@@ -13,6 +13,9 @@ namespace TTTE.DTOs
         [JsonPropertyName("id_servicio")]
         public int IdServicio { get; set; }
 
+        [JsonPropertyName("id_cliente")]
+        public int IdCliente { get; set; }
+
         [JsonPropertyName("id_barbero")]
         public int IdBarbero { get; set; }
 
@@ -44,6 +47,9 @@ namespace TTTE.DTOs
 
         [JsonPropertyName("id_servicio")]
         public int IdServicio { get; set; }
+
+        [JsonPropertyName("id_cliente")]
+        public int IdCliente { get; set; }
 
         [JsonPropertyName("id_barbero")]
         public int IdBarbero { get; set; }
