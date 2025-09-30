@@ -229,5 +229,27 @@ namespace TTTE.Services
                 return false;
             }
         }
+
+        public async Task<List<CitaDto>> ObtenerCitasPorClienteAsync(int idCliente)
+        {
+            try
+            {
+                if (!await ConfigurarAutenticacionAsync())
+                    return new List<CitaDto>();
+
+                var response = await _httpClient.GetAsync($"{_baseUrl}/cliente/{idCliente}");
+                if (!response.IsSuccessStatusCode)
+                    return new List<CitaDto>();
+
+                var json = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<CitaDto>>(json, options) ?? new List<CitaDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener citas del cliente: {ex.Message}");
+                return new List<CitaDto>();
+            }
+        }
     }
 }

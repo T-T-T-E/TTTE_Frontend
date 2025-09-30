@@ -14,47 +14,75 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>Gestión de Citas</h1>
-                <button class="btn btn-primary" @onclick="AbrirModalCrear">
-                    <i class="bi bi-plus-circle"></i> Nueva Cita
-                </button>
+                <div>
+                    <!-- Botón solo para clientes (rol=1) -->
+                    @if (EsCliente)
+                    {
+                        <button class="btn btn-info me-2" @onclick="ObtenerMisCitas">
+                            <i class="bi bi-person-check"></i> Ver Mis Citas
+                        </button>
+                    }
+                    <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                        <i class="bi bi-plus-circle"></i> Nueva Cita
+                    </button>
+                </div>
             </div>
 
-            <!-- Filtro por Barbero -->
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Filtrar por Barbero:</strong></label>
-                            <div class="input-group">
-                                <select class="form-select" @bind="idBarberoSeleccionado">
-                                    <option value="0">Todos los barberos</option>
-                                    @foreach (var barbero in barberos)
-                                    {
-                                        <option value="@barbero.Id">@barbero.nombreCompleto</option>
-                                    }
-                                </select>
-                                <button class="btn btn-primary" @onclick="AplicarFiltro" 
-                                        disabled="@(idBarberoSeleccionado == 0)">
-                                    <i class="bi bi-search"></i> Filtrar
-                                </button>
-                                <button class="btn btn-outline-secondary" @onclick="LimpiarFiltro" 
-                                        disabled="@(!filtroAplicado)">
-                                    <i class="bi bi-x-circle"></i> Limpiar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            @if (filtroAplicado && barberoSeleccionado != null)
-                            {
-                                <div class="alert alert-info mb-0 py-2">
-                                    <i class="bi bi-info-circle"></i> 
-                                    Filtrado por: <strong>@barberoSeleccionado.nombreCompleto</strong>
+            <!-- Filtro por Barbero - Solo para administradores y barberos -->
+            @if (PuedeVerFiltroBarbero)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>Filtrar por Barbero:</strong></label>
+                                <div class="input-group">
+                                    <select class="form-select" @bind="idBarberoSeleccionado">
+                                        <option value="0">Todos los barberos</option>
+                                        @foreach (var barbero in barberos)
+                                        {
+                                            <option value="@barbero.Id">@barbero.nombreCompleto</option>
+                                        }
+                                    </select>
+                                    <button class="btn btn-primary" @onclick="AplicarFiltro"
+                                            disabled="@(idBarberoSeleccionado == 0)">
+                                        <i class="bi bi-search"></i> Filtrar
+                                    </button>
+                                    <button class="btn btn-outline-secondary" @onclick="LimpiarFiltro"
+                                            disabled="@(!filtroAplicado)">
+                                        <i class="bi bi-x-circle"></i> Limpiar
+                                    </button>
                                 </div>
-                            }
+                            </div>
+                            <div class="col-md-6">
+                                @if (filtroAplicado && barberoSeleccionado != null)
+                                {
+                                    <div class="alert alert-info mb-0 py-2">
+                                        <i class="bi bi-info-circle"></i>
+                                        Filtrado por: <strong>@barberoSeleccionado.nombreCompleto</strong>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
+
+            <!-- Mensajes informativos según el rol -->
+            @if (!estaAutenticado)
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Debe iniciar sesión para ver las citas.
+                </div>
+            }
+            else if (EsCliente)
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Vista de cliente - Use "Ver Mis Citas" para ver sus citas.
+                </div>
+            }
 
             @if (mostrarMensaje)
             {
@@ -95,6 +123,10 @@
                                 @if (filtroAplicado && barberoSeleccionado != null)
                                 {
                                     <span>No hay citas para el barbero: @barberoSeleccionado.nombreCompleto</span>
+                                }
+                                else if (EsCliente)
+                                {
+                                    <span>No tienes citas registradas</span>
                                 }
                                 else
                                 {
@@ -147,7 +179,7 @@
                             {
                                 <div class="d-flex justify-content-between align-items-center mt-3">
                                     <div>
-                                        Mostrando @(((currentPage - 1) * pageSize) + 1) a 
+                                        Mostrando @(((currentPage - 1) * pageSize) + 1) a
                                         @(Math.Min(currentPage * pageSize, citas.Count)) de @citas.Count registros
                                     </div>
                                     <nav>
@@ -252,6 +284,9 @@
     private bool guardando = false;
     private bool cargando = true;
     private DateTime fechaSeleccionada = DateTime.Today;
+    private bool estaAutenticado = false;
+    private int? rolUsuario = null;
+    private int idUsuarioActual = 0;
 
     // Variables para paginación
     private int currentPage = 1;
@@ -268,6 +303,10 @@
     private string mensaje = "";
     private string tipoMensaje = "info";
 
+    // Propiedades computadas para permisos
+    private bool EsCliente => rolUsuario.HasValue && rolUsuario.Value == 1;
+    private bool PuedeVerFiltroBarbero => rolUsuario.HasValue && (rolUsuario.Value == 2 || rolUsuario.Value == 3);
+
     protected override async Task OnInitializedAsync()
     {
         await VerificarAutenticacion();
@@ -276,10 +315,41 @@
 
     private async Task VerificarAutenticacion()
     {
-        var token = await AuthService.GetToken();
-        if (string.IsNullOrEmpty(token))
+        estaAutenticado = await AuthService.IsAuthenticated();
+        if (estaAutenticado)
+        {
+            await ObtenerRolUsuario();
+            await ObtenerIdUsuarioActual();
+        }
+        else
         {
             Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task ObtenerRolUsuario()
+    {
+        try
+        {
+            var token = await AuthService.GetToken();
+            rolUsuario = JwtHelper.GetUserRoleFromToken(token);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener rol: {ex.Message}");
+        }
+    }
+
+    private async Task ObtenerIdUsuarioActual()
+    {
+        try
+        {
+            var token = await AuthService.GetToken();
+            idUsuarioActual = JwtHelper.GetUserIdFromToken(token);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener ID usuario: {ex.Message}");
         }
     }
 
@@ -324,11 +394,34 @@
         }
     }
 
+    // Nuevo método para obtener citas del cliente
+    private async Task ObtenerMisCitas()
+    {
+        cargando = true;
+        try
+        {
+            citas = await CitaService.ObtenerCitasPorClienteAsync(idUsuarioActual);
+            LimpiarFiltroEstado();
+            currentPage = 1;
+
+            MostrarMensaje($"Se encontraron {citas.Count} de tus citas", "success");
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje("Error al cargar tus citas: " + ex.Message, "danger");
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
     // Métodos de paginación
     private IEnumerable<CitaDto> GetCitasPagadas()
     {
         if (citas == null) return Enumerable.Empty<CitaDto>();
-        
+
         return citas
             .Skip((currentPage - 1) * pageSize)
             .Take(pageSize);
@@ -356,9 +449,9 @@
             filtroAplicado = true;
             currentPage = 1;
 
-            MostrarMensaje(citas.Count > 0 
-                ? $"Se encontraron {citas.Count} citas para {barberoSeleccionado?.nombreCompleto}" 
-                : $"No hay citas para {barberoSeleccionado?.nombreCompleto}", 
+            MostrarMensaje(citas.Count > 0
+                ? $"Se encontraron {citas.Count} citas para {barberoSeleccionado?.nombreCompleto}"
+                : $"No hay citas para {barberoSeleccionado?.nombreCompleto}",
                 citas.Count > 0 ? "success" : "info");
         }
         catch (Exception ex)
@@ -404,13 +497,13 @@
     private void AbrirModalEditar(CitaDto cita)
     {
         citaFormulario = new CrearCitaDto
-        {
-            NombreCliente = cita.NombreCliente,
-            IdServicio = cita.IdServicio,
-            IdBarbero = cita.IdBarbero,
-            Fecha = cita.Fecha.ToString("yyyy-MM-dd"),
-            Hora = cita.Hora.ToString(@"hh\:mm")
-        };
+            {
+                NombreCliente = cita.NombreCliente,
+                IdServicio = cita.IdServicio,
+                IdBarbero = cita.IdBarbero,
+                Fecha = cita.Fecha.ToString("yyyy-MM-dd"),
+                Hora = cita.Hora.ToString(@"hh\:mm")
+            };
         fechaSeleccionada = cita.Fecha;
         citaEditandoId = cita.Id;
         esEdicion = true;
@@ -428,7 +521,7 @@
         guardando = true;
         citaFormulario.Fecha = fechaSeleccionada.ToString("yyyy-MM-dd");
 
-        bool resultado = esEdicion 
+        bool resultado = esEdicion
             ? await CitaService.ActualizarCitaAsync(citaEditandoId, citaFormulario)
             : await CitaService.CrearCitaAsync(citaFormulario);
 
