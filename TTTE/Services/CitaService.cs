@@ -1,5 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text;
+using TTTE.Helpers;
+
 using TTTE.DTOs;
 
 namespace TTTE.Services
@@ -91,9 +93,21 @@ namespace TTTE.Services
                     return false;
                 }
 
+                // Obtener ID del cliente desde el token
+                var idCliente = await ObtenerIdClienteDesdeTokenAsync();
+                if (idCliente == 0)
+                {
+                    Console.WriteLine("No se pudo obtener el ID del cliente desde el token");
+                    return false;
+                }
+
+                // Asignar el ID del cliente al DTO
+                cita.IdCliente = idCliente;
+
                 var options = new JsonSerializerOptions
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
                 };
 
                 var json = JsonSerializer.Serialize(cita, options);
@@ -106,9 +120,11 @@ namespace TTTE.Services
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"Error al crear cita: {response.StatusCode} - {errorContent}");
+                    return false;
                 }
 
-                return response.IsSuccessStatusCode;
+                Console.WriteLine("Cita creada exitosamente");
+                return true;
             }
             catch (Exception ex)
             {
@@ -166,6 +182,7 @@ namespace TTTE.Services
             return JsonSerializer.Deserialize<List<CitaDto>>(json, options) ?? new List<CitaDto>();
         }
 
+        // En CitaService.cs - mejora el método ObtenerBarberosAsync
         public async Task<List<DatosPersonal>> ObtenerBarberosAsync()
         {
             try
@@ -191,9 +208,15 @@ namespace TTTE.Services
 
                 var todosLosUsuarios = JsonSerializer.Deserialize<List<DatosPersonal>>(json, options) ?? new List<DatosPersonal>();
 
-                // dejo esto pendiente por si acaso es necesario
+                // Filtrar solo barberos (rol = 2)
                 var barberos = todosLosUsuarios.Where(u => u.rol == 2).ToList();
                 Console.WriteLine($"Barberos encontrados: {barberos.Count}");
+
+                // Log para debugging
+                foreach (var barbero in barberos)
+                {
+                    Console.WriteLine($"Barbero: {barbero.nombreCompleto}, ID: {barbero.Id}, Rol: {barbero.rol}");
+                }
 
                 return barberos;
             }
@@ -249,6 +272,26 @@ namespace TTTE.Services
             {
                 Console.WriteLine($"Error al obtener citas del cliente: {ex.Message}");
                 return new List<CitaDto>();
+            }
+        }
+
+        // Agrega este método en tu CitaService.cs
+        private async Task<int> ObtenerIdClienteDesdeTokenAsync()
+        {
+            try
+            {
+                var token = await _authService.GetToken();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return 0;
+                }
+
+                return JwtHelper.GetUserIdFromToken(token);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID del cliente: {ex.Message}");
+                return 0;
             }
         }
     }
